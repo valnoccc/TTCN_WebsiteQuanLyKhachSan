@@ -3,11 +3,11 @@ import { LayoutGrid, List, UserCheck, CalendarDays, BarChart3 } from 'lucide-rea
 
 const AdminNav = () => {
     const navItems = [
+        { path: '/admin/stats', label: 'Dashboard', icon: BarChart3 },
         { path: '/admin', label: 'Quản lý phòng', icon: LayoutGrid, end: true },
         { path: '/admin/room-types', label: 'Loại phòng', icon: List },
         { path: '/admin/customers', label: 'Khách hàng', icon: UserCheck },
-        { path: '/admin/bookings', label: 'Đặt phòng', icon: CalendarDays },
-        { path: '/admin/stats', label: 'Thống kê', icon: BarChart3 },
+        { path: '/admin/bookings', label: 'Đặt phòng', icon: CalendarDays }
     ];
 
     return (

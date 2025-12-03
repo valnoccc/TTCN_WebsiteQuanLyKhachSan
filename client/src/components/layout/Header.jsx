@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, NavLink } from 'react-router-dom';
 import { Menu, X, Home, List, User, History, LogOut, LayoutDashboard } from 'lucide-react';
-import ProfileDropdown from '../common/ProfileDropDown';
+import ProfileDropdown from '../common/ProfileDropdown';
 
 const Header = () => {
     const navigate = useNavigate();

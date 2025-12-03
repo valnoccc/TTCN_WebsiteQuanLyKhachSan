@@ -7,4 +7,9 @@ router.get('/', roomController.getAllRooms);
 router.get('/:id', roomController.getRoomDetail);
 router.get('/:id/related', roomController.getRelatedRooms);
 
+// CRUD
+router.post('/', roomController.createRoom);
+router.put('/:id', roomController.updateRoom);
+router.delete('/:id', roomController.deleteRoom);
+
 module.exports = router;

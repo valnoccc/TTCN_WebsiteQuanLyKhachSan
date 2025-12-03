@@ -7,6 +7,8 @@ const db = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const roomTypeRoutes = require('./routes/roomTypeRoutes');
+const userRoutes = require('./routes/userRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
 
@@ -19,6 +21,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/room-types', roomTypeRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 const PORT = 5000;
 app.listen(PORT, () => {

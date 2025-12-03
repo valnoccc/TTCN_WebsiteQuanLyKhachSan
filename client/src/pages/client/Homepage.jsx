@@ -24,10 +24,24 @@ const HomePage = () => {
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const data = await roomApi.getAll();
-                setRooms(data);
+                // Gọi API getAll có thể trả về { data: [...], pagination: ... } hoặc [...] tùy vào backend
+                const response = await roomApi.getAll();
+
+                // Kiểm tra cấu trúc dữ liệu trả về để lấy mảng phòng cho đúng
+                if (response && response.data && Array.isArray(response.data)) {
+                    // Trường hợp Backend trả về dạng phân trang: { data: [...], pagination: ... }
+                    setRooms(response.data);
+                } else if (Array.isArray(response)) {
+                    // Trường hợp Backend trả về mảng trực tiếp: [...]
+                    setRooms(response);
+                } else {
+                    // Dữ liệu không hợp lệ
+                    console.error("Dữ liệu phòng không đúng định dạng:", response);
+                    setRooms([]);
+                }
             } catch (error) {
                 console.error("Lỗi tải phòng:", error);
+                setRooms([]); // Set về rỗng nếu lỗi để tránh crash
             }
         };
         fetchRooms();
@@ -114,7 +128,7 @@ const HomePage = () => {
                 </div>
             </div>
 
-            {/* --- 3. ABOUT US (Giữ nguyên) --- */}
+            {/* --- 3. ABOUT US --- */}
             <section className="py-16 bg-white">
                 <div className="container mx-auto px-4">
                     <div className="flex flex-col lg:flex-row items-center gap-16">
@@ -137,7 +151,7 @@ const HomePage = () => {
                                 Không gian nghỉ dưỡng <br /> <span className="text-teal-600">Hòa mình cùng thiên nhiên</span>
                             </h2>
                             <p className="text-gray-500 mb-6 leading-relaxed text-lg">
-                                Titilus Luxury tọa lạc tại vị trí đắc địa với tầm nhìn bao quát đại dương. Chúng tôi mang đến sự kết hợp hoàn hảo giữa kiến trúc hiện đại và vẻ đẹp hoang sơ.
+                                Titilus Luxury tọa lạc tại vị trí đắc địa với tầm nhìn bao quát đại dương. Chúng tôi mang đến sự kết hợp hoàn hảo giữa kiến trúc hiện đại và vẻ đẹp hoang sơ của thiên nhiên.
                             </p>
                             <div className="grid grid-cols-2 gap-4 mb-8">
                                 <div className="flex items-center gap-2 text-gray-700 font-medium"><CheckCircle2 className="text-teal-500" size={20} /> Bãi biển riêng</div>
@@ -153,7 +167,7 @@ const HomePage = () => {
                 </div>
             </section>
 
-            {/* --- 4. SERVICES (Giữ nguyên) --- */}
+            {/* --- 4. SERVICES --- */}
             <section className="py-20 bg-gray-50">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-2xl mx-auto mb-16">
@@ -183,7 +197,7 @@ const HomePage = () => {
                             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">Phòng Nghỉ Của Chúng Tôi</h2>
                         </div>
                         <Link to="/rooms" className="hidden md:flex items-center gap-2 text-teal-600 font-bold hover:underline">
-                            Xem tất cả
+                            Xem tất cả <ArrowRight size={20} />
                         </Link>
                     </div>
 
@@ -199,36 +213,46 @@ const HomePage = () => {
                             640: { slidesPerView: 2 },
                             1024: { slidesPerView: 3 },
                         }}
-                        className="pb-12 !px-2" // Padding bottom để chứa dấu chấm pagination
+                        className="pb-12 !px-2"
                     >
-                        {rooms.map((room) => (
-                            <SwiperSlide key={room.MaPhong}>
-                                <Link to={`/rooms/${room.MaPhong}`} className="group bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-2xl transition duration-300 block h-full">
-                                    <div className="relative h-72 overflow-hidden">
-                                        <img
-                                            src={room.HinhAnh || "https://via.placeholder.com/400x300"}
-                                            alt={room.TenPhong}
-                                            className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                                        />
-                                        <span className="absolute top-4 left-4 bg-white/90 backdrop-blur text-teal-700 text-xs font-bold px-3 py-1 rounded-full uppercase shadow-sm">
-                                            {room.TenLoai}
-                                        </span>
-                                        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-6 pt-12">
-                                            <h3 className="text-xl font-bold text-white mb-1 line-clamp-1">{room.TenPhong}</h3>
+                        {/* Kiểm tra mảng rooms có dữ liệu thì mới render */}
+                        {Array.isArray(rooms) && rooms.length > 0 ? (
+                            rooms.map((room) => (
+                                <SwiperSlide key={room.MaPhong}>
+                                    <Link to={`/rooms/${room.MaPhong}`} className="group bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-2xl transition duration-300 block h-full">
+                                        <div className="relative h-72 overflow-hidden">
+                                            <img
+                                                src={room.HinhAnh || "https://via.placeholder.com/400x300"}
+                                                alt={room.TenPhong}
+                                                className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                                            />
+                                            <span className="absolute top-4 left-4 bg-white/90 backdrop-blur text-teal-700 text-xs font-bold px-3 py-1 rounded-full uppercase shadow-sm">
+                                                {room.TenLoai}
+                                            </span>
+                                            <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-6 pt-12">
+                                                <h3 className="text-xl font-bold text-white mb-1 line-clamp-1">{room.TenPhong}</h3>
+                                                <div className="flex text-yellow-400">
+                                                    <Star size={14} fill="currentColor" /><Star size={14} fill="currentColor" /><Star size={14} fill="currentColor" /><Star size={14} fill="currentColor" /><Star size={14} fill="currentColor" />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="p-6 flex justify-between items-center">
-                                        <div>
-                                            <span className="text-sm text-gray-400">Giá chỉ từ</span>
-                                            <p className="text-xl font-bold text-teal-600">{formatPrice(room.GiaTheoNgay)}</p>
+                                        <div className="p-6 flex justify-between items-center">
+                                            <div>
+                                                <span className="text-sm text-gray-400">Giá chỉ từ</span>
+                                                <p className="text-xl font-bold text-teal-600">{formatPrice(room.GiaTheoNgay)}</p>
+                                            </div>
+                                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 group-hover:bg-teal-600 group-hover:text-white transition">
+                                                <ArrowRight size={20} />
+                                            </div>
                                         </div>
-                                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 group-hover:bg-teal-600 group-hover:text-white transition">
-                                            <ArrowRight size={20} />
-                                        </div>
-                                    </div>
-                                </Link>
-                            </SwiperSlide>
-                        ))}
+                                    </Link>
+                                </SwiperSlide>
+                            ))
+                        ) : (
+                            <div className="text-center py-10 w-full text-gray-500">
+                                Không có phòng nào để hiển thị hoặc đang tải...
+                            </div>
+                        )}
                     </Swiper>
 
                     <div className="mt-8 text-center md:hidden">
@@ -238,16 +262,18 @@ const HomePage = () => {
                     </div>
                 </div>
             </section>
-            {/* --- 6. VỊ TRÍ & LIÊN HỆ (Nâng cấp) --- */}
+
+            {/* --- 6. LOCATION --- */}
+            {/* --- 6. VỊ TRÍ & LIÊN HỆ --- */}
             <section className="py-20 bg-slate-900 text-white relative overflow-hidden">
                 {/* Pattern nền mờ nhẹ */}
                 <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
 
                 <div className="container mx-auto px-4 relative z-10">
-                    <div className="flex flex-col lg:flex-row gap-12 items-center">
+                    <div className="flex flex-col lg:flex-row gap-12 items-stretch"> {/* Sửa items-center thành items-stretch để 2 cột cao bằng nhau */}
 
                         {/* Cột Thông tin (Trái) */}
-                        <div className="w-full lg:w-1/2 space-y-8">
+                        <div className="w-full lg:w-1/2 space-y-8 flex flex-col justify-center">
                             <div>
                                 <span className="text-teal-400 font-bold text-sm uppercase tracking-widest mb-2 block">Liên hệ với chúng tôi</span>
                                 <h2 className="text-4xl md:text-5xl font-bold leading-tight">
@@ -290,21 +316,22 @@ const HomePage = () => {
                             </div>
                         </div>
 
-                        {/* Cột Bản đồ (Phải) - Dùng Google Maps Iframe thật */}
-                        <div className="w-full lg:w-1/2">
-                            <div className="relative h-[450px] w-full rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-700 group">
-                                {/* Google Maps Embed (Đà Nẵng) */}
+                        {/* Cột Bản đồ (Phải) - Đã sửa lỗi hiển thị */}
+                        <div className="w-full lg:w-1/2 min-h-[400px]">
+                            <div className="relative w-full h-full min-h-[400px] rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-700 group">
+                                {/* Google Maps Iframe chính xác cho 180 Cao Lỗ */}
                                 <iframe
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1959.9716026605802!2d106.67707342199415!3d10.738860789834092!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f62a90e5dbd%3A0x674d5126513db295!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBDw7RuZyBuZ2jhu4cgU8OgaSBHw7Ju!5e0!3m2!1svi!2s!4v1764144475089!5m2!1svi!2s"
+                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.9543420446194!2d106.67525717479207!3d10.738002459901775!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f62a90e5dbd%3A0x674d5126513db295!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBDw7RuZyBuZ2jhu4cgU8OgaSBHw7Ju!5e0!3m2!1svi!2s!4v1764401408856!5m2!1svi!2s"
                                     width="100%"
                                     height="100%"
-                                    style={{ border: 0 }}
+                                    style={{ border: 0, minHeight: '400px' }}
                                     allowFullScreen=""
                                     loading="lazy"
-                                    className="grayscale group-hover:grayscale-0 transition duration-700"
+                                    className="grayscale group-hover:grayscale-0 transition duration-700 w-full h-full"
                                 ></iframe>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </section>

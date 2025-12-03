@@ -20,7 +20,9 @@ const NguoiDung = {
     },
 
     getAll: async () => {
-        const [rows] = await db.execute("SELECT MaNguoiDung, HoTen, Email, VaiTro FROM NguoiDung");
+        const sql = "SELECT MaNguoiDung, TenDangNhap, HoTen, Email, SDT, VaiTro, DiaChi, NgayTao FROM NguoiDung ORDER BY MaNguoiDung DESC";
+
+        const [rows] = await db.execute(sql);
         return rows;
     },
 
@@ -28,7 +30,27 @@ const NguoiDung = {
         const sql = "UPDATE NguoiDung SET MatKhau = ? WHERE MaNguoiDung = ?";
         const [result] = await db.execute(sql, [newPasswordHash, id]);
         return result;
-    }
+    },
+
+    delete: async (id) => {
+        const sql = "DELETE FROM NguoiDung WHERE MaNguoiDung = ?";
+        const [result] = await db.execute(sql, [id]);
+        return result;
+    },
+
+    // Hàm cập nhật thông tin (Admin sửa)
+    update: async (id, data) => {
+        const sql = "UPDATE NguoiDung SET HoTen = ?, Email = ?, SDT = ?, DiaChi = ?, VaiTro = ? WHERE MaNguoiDung = ?";
+        const [result] = await db.execute(sql, [
+            data.HoTen,
+            data.Email,
+            data.SDT,
+            data.DiaChi, // Thêm Địa chỉ
+            data.VaiTro, // Thêm Vai trò
+            id
+        ]);
+        return result;
+    },
 };
 
 module.exports = NguoiDung;

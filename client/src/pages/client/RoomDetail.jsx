@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom'; // 1. Thêm useNavigate
 import {
     Star, MapPin, Users, Maximize, BedDouble,
     Wifi, Wind, Tv, Coffee, CheckCircle2, ArrowLeft, Heart, Share2, CalendarIcon,
@@ -8,8 +8,8 @@ import {
 import roomApi from '../../api/roomApi';
 
 const RoomDetail = () => {
-    // --- QUAN TRỌNG: Dòng này phải nằm đầu tiên ---
     const { id } = useParams();
+    const navigate = useNavigate(); // 2. Khởi tạo hook điều hướng
 
     // --- KHAI BÁO STATE ---
     const [room, setRoom] = useState(null);
@@ -27,7 +27,7 @@ const RoomDetail = () => {
 
     // 1. Fetch dữ liệu phòng chính
     useEffect(() => {
-        window.scrollTo(0, 0); // Cuộn lên đầu trang
+        window.scrollTo(0, 0);
         const fetchRoomDetail = async () => {
             try {
                 setLoading(true);
@@ -51,7 +51,7 @@ const RoomDetail = () => {
     useEffect(() => {
         const fetchRelated = async () => {
             try {
-                const data = await roomApi.getRelated(id); // Lúc này id đã có giá trị
+                const data = await roomApi.getRelated(id);
                 setRelatedRooms(data);
             } catch (error) {
                 console.error("Lỗi lấy phòng khác:", error);
@@ -77,6 +77,30 @@ const RoomDetail = () => {
             }
         }
     }, [checkIn, checkOut, room]);
+
+    // --- 3. HÀM XỬ LÝ SỰ KIỆN ĐẶT PHÒNG (MỚI THÊM) ---
+    const handleBookNow = () => {
+        // Kiểm tra validation lần cuối
+        if (!checkIn || !checkOut) {
+            alert("Vui lòng chọn ngày nhận và trả phòng!");
+            return;
+        }
+        if (days <= 0) {
+            alert("Ngày trả phòng phải sau ngày nhận phòng!");
+            return;
+        }
+
+        // Chuyển hướng sang trang BookingForm và mang theo dữ liệu (room, giá, ngày)
+        navigate('/booking', {
+            state: {
+                room: room,
+                checkIn: checkIn,
+                checkOut: checkOut,
+                days: days,
+                totalPrice: totalPrice
+            }
+        });
+    };
 
     // --- CÁC HÀM HELPER ---
     const formatPrice = (price) => {
@@ -126,14 +150,14 @@ const RoomDetail = () => {
     return (
         <div className="bg-white font-sans text-gray-800 pb-20">
 
-            {/* HEADER */}
+            {/* HEADER THÔNG TIN */}
             <div className="container mx-auto px-4 pt-6 mb-8">
                 <div className="flex justify-between items-center mb-4">
                     <Link to="/rooms" className="flex items-center text-gray-500 hover:text-teal-600 transition">
-                        Quay lại danh sách
+                        <ArrowLeft size={18} className="mr-2" /> Quay lại danh sách
                     </Link>
                     <div className="flex gap-4">
-                        <button className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition"><Heart size={20} />Yêu thích</button>
+                        <button className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition"><Heart size={20} /> Lưu tin</button>
                         <button className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition"><Share2 size={20} /> Chia sẻ</button>
                     </div>
                 </div>
@@ -146,32 +170,75 @@ const RoomDetail = () => {
                 </div>
             </div>
 
-            {/* MAIN CONTENT */}
+            {/* KHU VỰC CHÍNH: ẢNH & FORM ĐẶT */}
             <div className="container mx-auto px-4">
                 <div className="flex flex-col lg:flex-row gap-8">
 
-                    {/* CỘT TRÁI: ẢNH (2/3) */}
+                    {/* === CỘT TRÁI: THƯ VIỆN ẢNH === */}
                     <div className="w-full lg:w-2/3">
+                        {/* Ảnh Lớn */}
                         <div className="h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-4 shadow-sm border border-gray-100">
-                            <img src={activeImage} alt="Main" className="w-full h-full object-cover transition-opacity duration-300" />
+                            <img
+                                src={activeImage}
+                                alt="Main View"
+                                className="w-full h-full object-cover transition-opacity duration-300"
+                            />
                         </div>
+
+                        {/* Dải Ảnh Thu Nhỏ */}
                         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                             {room.DanhSachAnh && room.DanhSachAnh.map((img, index) => (
-                                <div key={index} onClick={() => setActiveImage(img)}
-                                    className={`relative h-24 w-36 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer transition ${activeImage === img ? 'ring-2 ring-teal-500 opacity-100' : 'opacity-70 hover:opacity-100'}`}>
-                                    <img src={img} alt="Thumb" className="w-full h-full object-cover" />
+                                <div
+                                    key={index}
+                                    onClick={() => setActiveImage(img)}
+                                    className={`relative h-24 w-36 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer transition border-2 ${activeImage === img ? 'border-teal-500 opacity-100' : 'border-transparent opacity-70 hover:opacity-100'
+                                        }`}
+                                >
+                                    <img src={img} alt={`Thumbnail ${index}`} className="w-full h-full object-cover" />
                                 </div>
                             ))}
                         </div>
+
+                        {/* Thông tin chi tiết */}
+                        <div className="mt-8 pr-4">
+                            <div className="flex gap-8 py-6 border-y border-gray-100 mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 bg-teal-50 rounded-lg text-teal-600"><Users size={24} /></div>
+                                    <div><p className="text-sm text-gray-500">Sức chứa</p><p className="font-bold">{room.SucChua} người</p></div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 bg-teal-50 rounded-lg text-teal-600"><Maximize size={24} /></div>
+                                    <div><p className="text-sm text-gray-500">Diện tích</p><p className="font-bold">{room.DienTich}m²</p></div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 bg-teal-50 rounded-lg text-teal-600"><BedDouble size={24} /></div>
+                                    <div><p className="text-sm text-gray-500">Giường</p><p className="font-bold">{room.SucChua > 2 ? '2 Giường đôi' : 'King Size'}</p></div>
+                                </div>
+                            </div>
+
+                            <div className="mb-10">
+                                <h2 className="text-2xl font-bold mb-4 text-gray-900">Mô tả phòng</h2>
+                                <p className="text-gray-600 leading-relaxed mb-4 whitespace-pre-line">
+                                    {room.MoTa || room.MoTaLoai || "Đang cập nhật mô tả..."}
+                                </p>
+                            </div>
+
+                            <div className="mb-10">
+                                <h2 className="text-2xl font-bold mb-6 text-gray-900">Tiện nghi cao cấp</h2>
+                                {renderAmenities(room.TienNghi)}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* CỘT PHẢI: FORM ĐẶT PHÒNG (1/3) */}
+                    {/* === CỘT PHẢI: FORM ĐẶT PHÒNG === */}
                     <div className="w-full lg:w-1/3">
                         <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 sticky top-24">
 
                             <div className="flex justify-between items-end mb-6">
                                 <div>
-                                    <span className="text-gray-400 text-sm line-through block">{formatPrice(room.GiaTheoNgay * 1.2)}</span>
+                                    <span className="text-gray-400 text-sm line-through block">
+                                        {formatPrice(room.GiaTheoNgay * 1.2)}
+                                    </span>
                                     <span className="text-3xl font-bold text-teal-600">{formatPrice(room.GiaTheoNgay)}</span>
                                     <span className="text-gray-500 text-sm"> /đêm</span>
                                 </div>
@@ -211,6 +278,7 @@ const RoomDetail = () => {
                                 </div>
                             </div>
 
+                            {/* Khu vực tính tiền & Nút Đặt phòng */}
                             {days > 0 ? (
                                 <div className="animate-fade-in">
                                     <div className="flex justify-between items-center mb-4 text-gray-600 text-sm pb-4 border-b border-gray-100">
@@ -223,7 +291,11 @@ const RoomDetail = () => {
                                         <span className="text-teal-700">{formatPrice(totalPrice)}</span>
                                     </div>
 
-                                    <button className="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 transition shadow-lg shadow-teal-200 active:scale-[0.98]">
+                                    {/* --- 4. GẮN SỰ KIỆN onClick VÀO ĐÂY --- */}
+                                    <button
+                                        onClick={handleBookNow}
+                                        className="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 transition shadow-lg shadow-teal-200 active:scale-[0.98]"
+                                    >
                                         Đặt Phòng Ngay
                                     </button>
                                 </div>
@@ -247,41 +319,10 @@ const RoomDetail = () => {
                     </div>
                 </div>
 
-                {/* THÔNG TIN CHI TIẾT BÊN DƯỚI */}
-                <div className="mt-12 lg:w-2/3 pr-8">
-                    <div className="flex gap-8 py-6 border-y border-gray-100 mb-8">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-teal-50 rounded-lg text-teal-600"><Users size={24} /></div>
-                            <div><p className="text-sm text-gray-500">Sức chứa</p><p className="font-bold">{room.SucChua} người</p></div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-teal-50 rounded-lg text-teal-600"><Maximize size={24} /></div>
-                            <div><p className="text-sm text-gray-500">Diện tích</p><p className="font-bold">{room.DienTich}m²</p></div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-teal-50 rounded-lg text-teal-600"><BedDouble size={24} /></div>
-                            <div><p className="text-sm text-gray-500">Giường</p><p className="font-bold">King Size</p></div>
-                        </div>
-                    </div>
-
-                    <div className="mb-10">
-                        <h2 className="text-2xl font-bold mb-4 text-gray-900">Mô tả phòng</h2>
-                        <p className="text-gray-600 leading-relaxed mb-4 whitespace-pre-line">
-                            {room.MoTa || room.MoTaLoai || "Đang cập nhật mô tả..."}
-                        </p>
-                    </div>
-
-                    <div className="mb-10">
-                        <h2 className="text-2xl font-bold mb-6 text-gray-900">Tiện nghi cao cấp</h2>
-                        {renderAmenities(room.TienNghi)}
-                    </div>
-                </div>
-
-                {/* PHÒNG KHÁC CÓ THỂ BẠN THÍCH */}
-                <div className="bg-gray-50 py-12 border-t border-gray-100 mt-12">
+                {/* --- PHÒNG KHÁC CÓ THỂ BẠN THÍCH (Giữ nguyên) --- */}
+                <div className="bg-gray-50 py-12 border-t border-gray-100 mt-12 rounded-2xl">
                     <div className="container mx-auto px-4">
                         <h2 className="text-2xl font-bold text-gray-900 mb-8">Có thể bạn cũng thích</h2>
-
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {relatedRooms.map((item) => (
                                 <Link to={`/rooms/${item.MaPhong}`} key={item.MaPhong} className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 border border-gray-100 block">
@@ -295,7 +336,6 @@ const RoomDetail = () => {
                                             {item.TenLoai}
                                         </span>
                                     </div>
-
                                     <div className="p-5">
                                         <h3 className="font-bold text-gray-800 mb-2 truncate group-hover:text-teal-600 transition">{item.TenPhong}</h3>
                                         <div className="flex gap-4 text-xs text-gray-500 mb-4">

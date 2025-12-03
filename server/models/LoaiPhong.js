@@ -24,6 +24,7 @@ const LoaiPhong = {
     },
 
     delete: async (id) => {
+        // Lưu ý: Nếu có phòng đang thuộc loại này, SQL có thể báo lỗi ràng buộc khóa ngoại.
         const [result] = await db.execute("DELETE FROM LoaiPhong WHERE MaLoai = ?", [id]);
         return result;
     }
