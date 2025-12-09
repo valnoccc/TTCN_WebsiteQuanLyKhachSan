@@ -7,7 +7,7 @@ const Phong = {
         // 1. Lấy danh sách phòng phân trang
         const sqlData = `
             SELECT 
-                p.MaPhong, p.TenPhong, p.TrangThai, p.SucChua, p.DienTich,
+                p.MaPhong, p.TenPhong, p.TrangThai, p.SucChua, p.DienTich, p.MoTa,
                 l.TenLoai, l.GiaTheoNgay, l.GiaTheoGio,
                 (SELECT Url FROM HinhAnhPhong h WHERE h.MaPhong = p.MaPhong LIMIT 1) as HinhAnh
             FROM Phong p

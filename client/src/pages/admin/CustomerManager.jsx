@@ -12,15 +12,15 @@ const CustomerManager = () => {
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
-    // Cập nhật state formData có thêm DiaChi và VaiTro
+    // Cập nhật state formData
     const [formData, setFormData] = useState({
         MaNguoiDung: null,
         TenDangNhap: '',
         HoTen: '',
         Email: '',
         SDT: '',
-        DiaChi: '',     // Mới thêm
-        VaiTro: 'KhachHang' // Mới thêm
+        DiaChi: '',
+        VaiTro: 'KhachHang'
     });
 
     // State Modal Xóa
@@ -221,8 +221,8 @@ const CustomerManager = () => {
 
                                         <td className="px-6 py-5">
                                             <span className={`px-3 py-1.5 rounded text-sm font-bold border flex items-center gap-1 w-fit ${customer.VaiTro === 'Admin'
-                                                    ? 'bg-purple-50 text-purple-700 border-purple-100'
-                                                    : (customer.VaiTro === 'NhanVien' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-green-50 text-green-700 border-green-100')
+                                                ? 'bg-purple-50 text-purple-700 border-purple-100'
+                                                : (customer.VaiTro === 'NhanVien' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-green-50 text-green-700 border-green-100')
                                                 }`}>
                                                 {customer.VaiTro === 'Admin' && <Shield size={12} />}
                                                 {customer.VaiTro}

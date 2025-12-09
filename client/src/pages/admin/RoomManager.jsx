@@ -74,7 +74,8 @@ const RoomManager = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const submitData = { ...formData, MaLoai: parseInt(formData.MaLoai), SucChua: parseInt(formData.SucChua), DienTich: parseFloat(formData.DienTich) };
+        //const submitData = { ...formData, MaLoai: parseInt(formData.MaLoai), SucChua: parseInt(formData.SucChua), DienTich: parseFloat(formData.DienTich) };
+        const submitData = { ...formData, MaLoai: parseInt(formData.MaLoai), SucChua: parseInt(formData.SucChua), DienTich: parseFloat(formData.DienTich), MoTa: formData.MoTa };
         try {
             if (isEditing) await roomApi.update(formData.MaPhong, submitData);
             else await roomApi.create(submitData);
@@ -213,7 +214,6 @@ const RoomManager = () => {
                             <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-red-500 transition"><X size={24} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                            {/* ... (Giữ nguyên nội dung Form) ... */}
                             <div>
                                 <label className="block text-base font-medium text-gray-700 mb-1.5">Tên phòng</label>
                                 <input type="text" required value={formData.TenPhong} onChange={(e) => setFormData({ ...formData, TenPhong: e.target.value })}

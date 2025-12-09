@@ -242,9 +242,6 @@ const RoomDetail = () => {
                                     <span className="text-3xl font-bold text-teal-600">{formatPrice(room.GiaTheoNgay)}</span>
                                     <span className="text-gray-500 text-sm"> /đêm</span>
                                 </div>
-                                <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">
-                                    <CheckCircle2 size={12} /> Còn trống
-                                </div>
                             </div>
 
                             <div className="space-y-4 mb-6">
@@ -319,7 +316,7 @@ const RoomDetail = () => {
                     </div>
                 </div>
 
-                {/* --- PHÒNG KHÁC CÓ THỂ BẠN THÍCH (Giữ nguyên) --- */}
+                {/* --- PHÒNG KHÁC CÓ THỂ BẠN THÍCH --- */}
                 <div className="bg-gray-50 py-12 border-t border-gray-100 mt-12 rounded-2xl">
                     <div className="container mx-auto px-4">
                         <h2 className="text-2xl font-bold text-gray-900 mb-8">Có thể bạn cũng thích</h2>

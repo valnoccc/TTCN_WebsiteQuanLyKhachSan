@@ -18,6 +18,8 @@ import BookingManager from './pages/admin/bookingManager';
 import BookingForm from './pages/client/BookingForm';
 import BookingSuccess from './pages/client/BookingSuccess';
 import BookingDetail from './pages/admin/BookingDetail';
+import InvoiceManager from './pages/admin/InvoiceManager';
+import InvoiceDetail from './pages/admin/InvoiceDetail';
 
 function App() {
   return (
@@ -35,6 +37,8 @@ function App() {
           <Route path="customers" element={<CustomerManager />} />
           <Route path="bookings" element={<BookingManager />} />
           <Route path="bookings/:id" element={<BookingDetail />} />
+          <Route path="invoices" element={<InvoiceManager />} />
+          <Route path="invoices/detail/:id" element={<InvoiceDetail />} />
         </Route>
 
         {/* Route User */}

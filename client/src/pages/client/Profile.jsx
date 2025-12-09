@@ -91,7 +91,7 @@ const Profile = () => {
         } catch (error) {
             console.error("Lỗi chi tiết:", error); // Log ra để xem
 
-            // SỬA LẠI ĐOẠN NÀY: Kiểm tra kỹ trước khi set state
+            // Kiểm tra kỹ trước khi set state
             let message = "Lỗi khi đổi mật khẩu";
 
             if (error.response && error.response.data && error.response.data.message) {
@@ -100,7 +100,7 @@ const Profile = () => {
                 message = error.message;
             }
 
-            setError(message); // Đảm bảo luôn truyền vào chuỗi text, không phải object
+            setError(message); // Đảm bảo luôn truyền vào chuỗi text
         }
     };
 

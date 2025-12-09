@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Outlet, Navigate, useNavigate, Link } from 'react-router-dom';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import ProfileDropdown from '../components/common/ProfileDropdown';
-import AdminNav from '../components/common/AdminNav'; // <--- 1. Import ở đây
+import AdminNav from '../components/common/AdminNav';
 
 const AdminLayout = () => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -27,7 +27,7 @@ const AdminLayout = () => {
             <AdminNav />
 
             {/* MAIN CONTENT */}
-            <main className="container mx-auto px-4 sm:px-6 pb-8"> {/* Bỏ py-8 thay bằng pb-8 vì nav đã có margin */}
+            <main className="container mx-auto px-4 sm:px-6 pb-8">
                 <Outlet />
             </main>
         </div>

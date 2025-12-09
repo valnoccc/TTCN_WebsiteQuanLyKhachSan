@@ -49,7 +49,7 @@ const BookingSuccess = () => {
                         </div>
                     </div>
 
-                    {/* Hướng dẫn thanh toán (Đã sửa: Bỏ QR Code) */}
+                    {/* Hướng dẫn thanh toán */}
                     {paymentMethod === 'ChuyenKhoan' ? (
                         <div className="text-center">
                             <div className="flex items-center justify-center gap-2 text-teal-700 font-bold mb-4 bg-teal-50 p-2 rounded-lg">

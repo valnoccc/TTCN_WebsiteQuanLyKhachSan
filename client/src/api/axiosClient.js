@@ -19,11 +19,9 @@ axiosClient.interceptors.request.use(async (config) => {
 // 2. Interceptor RESPONSE: Xử lý dữ liệu trả về
 axiosClient.interceptors.response.use((response) => {
     // Backend trả về: { message: "...", token: "..." }
-    // Ta chỉ lấy phần data đó, bỏ qua phần config rườm rà của axios
     return response.data;
 }, (error) => {
     // Nếu lỗi 401 (Hết hạn token) -> Đá về Login
-    // (Trừ trường hợp đang ở trang login/register thì không cần đá)
     const originalRequest = error.config;
     if (error.response && error.response.status === 401 && !originalRequest.url.includes('/auth')) {
         localStorage.removeItem('token');

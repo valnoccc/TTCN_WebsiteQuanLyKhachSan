@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import bookingApi from '../../api/bookingApi'; // Đảm bảo bạn đã import đúng
+import bookingApi from '../../api/bookingApi';
 import {
     ArrowLeft, Printer, CheckCircle, AlertTriangle,
     CreditCard, Calendar, User, DollarSign, Save
@@ -26,7 +26,7 @@ const BookingDetail = () => {
                 const res = await bookingApi.getById(id);
 
                 // --- BƯỚC 1: LOG RA ĐỂ XEM DỮ LIỆU THỰC TẾ ---
-                //console.log("📥 Dữ liệu API trả về:", res);
+                //console.log(" Dữ liệu API trả về:", res);
 
                 // --- BƯỚC 2: SỬA LẠI CÁCH SET STATE ---ta'
                 if (res && res.MaDonDat) {
@@ -64,7 +64,7 @@ const BookingDetail = () => {
     // Tổng tiền phòng + Phụ thu
     const finalTotal = totalRoomCharge + finalSurcharge;
 
-    // SỬA TẠI ĐÂY: Thực thu = Tổng tiền + Phụ thu (Không trừ cọc)
+    // Thực thu = Tổng tiền + Phụ thu (Không trừ cọc)
     const remainingAmount = finalTotal;
 
 
@@ -255,7 +255,6 @@ const BookingDetail = () => {
 
                         <div className="flex justify-between items-center text-xl font-bold text-teal-800">
                             <span>Thực thu:</span>
-                            {/* SỬA FORMULA TẠI ĐÂY */}
                             <span>{formatMoney(totalRoomCharge + finalSurcharge)}</span>
                         </div>
                     </div>
@@ -388,7 +387,7 @@ const BookingDetail = () => {
                                     onClick={handleCompleteOrder}
                                     className="px-6 py-2 bg-teal-700 text-white rounded font-bold hover:bg-teal-800 flex items-center gap-2 shadow-lg"
                                 >
-                                    <Save size={18} /> Xác Nhận & Check-out
+                                    Thanh toán
                                 </button>
                             </div>
                         </div>

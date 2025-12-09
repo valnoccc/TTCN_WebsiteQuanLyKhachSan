@@ -9,7 +9,7 @@ const DonDatPhong = {
 
             const { MaNguoiDung, NgayNhan, NgayTra, TongTien, TienCoc, DanhSachPhong } = bookingData;
 
-            console.log("👉 DỮ LIỆU INSERT DonDatPhong:", { MaNguoiDung, NgayNhan, NgayTra, TongTien, TienCoc });
+            //console.log("DỮ LIỆU INSERT DonDatPhong:", { MaNguoiDung, NgayNhan, NgayTra, TongTien, TienCoc });
 
             const [result] = await connection.execute(
                 `INSERT INTO DonDatPhong 
@@ -22,8 +22,6 @@ const DonDatPhong = {
 
             if (DanhSachPhong && DanhSachPhong.length > 0) {
                 const values = DanhSachPhong.map(p => [newBookingId, p.MaPhong, p.Gia]);
-
-                console.log("👉 VALUES INSERT ChiTietDonDat:", values);
 
                 const sql = `
                 INSERT INTO ChiTietDonDat (MaDonDat, MaPhong, GiaPhongTaiThoiDiemDat)

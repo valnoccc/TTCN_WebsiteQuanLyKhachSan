@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Filter, Users, Maximize, Bed, BedDouble, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Filter, Users, Maximize, Bed, BedDouble, X, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import roomApi from '../../api/roomApi';
 
 const RoomList = () => {
+    const navigate = useNavigate();
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [priceRange, setPriceRange] = useState(5000000); // Giá max mặc định
+    const [priceRange, setPriceRange] = useState(5000000);
+
+    // State cho modal đặt phòng
+    const [showBookingModal, setShowBookingModal] = useState(false);
+    const [selectedRoom, setSelectedRoom] = useState(null);
+    const [checkIn, setCheckIn] = useState('');
+    const [checkOut, setCheckOut] = useState('');
 
     // --- STATE PHÂN TRANG ---
     const [pagination, setPagination] = useState({
@@ -24,7 +31,6 @@ const RoomList = () => {
                 limit: 6
             });
 
-            // Xử lý dữ liệu trả về từ API phân trang
             if (response.data) {
                 setRooms(response.data);
                 setPagination({
@@ -58,6 +64,53 @@ const RoomList = () => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
     };
 
+    // Mở modal đặt phòng
+    const handleBookNowClick = (room) => {
+        setSelectedRoom(room);
+        setCheckIn('');
+        setCheckOut('');
+        setShowBookingModal(true);
+    };
+
+    // Xác nhận đặt phòng
+    const handleConfirmBooking = () => {
+        // Kiểm tra validation
+        if (!checkIn || !checkOut) {
+            alert("Vui lòng chọn ngày nhận và trả phòng!");
+            return;
+        }
+
+        const checkInDate = new Date(checkIn);
+        const checkOutDate = new Date(checkOut);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (checkInDate < today) {
+            alert("Ngày nhận phòng không được trong quá khứ!");
+            return;
+        }
+
+        if (checkOutDate <= checkInDate) {
+            alert("Ngày trả phòng phải sau ngày nhận phòng!");
+            return;
+        }
+
+        // Tính số đêm
+        const days = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+        const totalPrice = selectedRoom.GiaTheoNgay * days;
+
+        // Chuyển hướng sang trang BookingForm với state
+        navigate('/booking', {
+            state: {
+                room: selectedRoom,
+                checkIn: checkIn,
+                checkOut: checkOut,
+                days: days,
+                totalPrice: totalPrice
+            }
+        });
+    };
+
     if (loading) return (
         <div className="flex justify-center items-center min-h-screen">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600"></div>
@@ -76,7 +129,7 @@ const RoomList = () => {
 
                 <div className="flex flex-col lg:flex-row gap-8">
 
-                    {/* --- SIDEBAR BỘ LỌC (ĐẦY ĐỦ) --- */}
+                    {/* --- SIDEBAR BỘ LỌC --- */}
                     <div className="w-full lg:w-1/4">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-24">
                             <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
@@ -172,11 +225,7 @@ const RoomList = () => {
                                                 alt={room.TenPhong}
                                                 className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                                             />
-                                            {room.TrangThai === 'Trong' ? (
-                                                <span className="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase shadow-sm">Còn trống</span>
-                                            ) : (
-                                                <span className="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase shadow-sm">Đã đặt</span>
-                                            )}
+
                                         </div>
                                         {/* Nội dung */}
                                         <div className="p-6 flex flex-col flex-grow">
@@ -189,10 +238,18 @@ const RoomList = () => {
                                                 <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100"><Maximize size={16} className="text-teal-600" /> {room.DienTich}m²</span>
                                             </div>
                                             <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100">
-                                                <div><span className="text-2xl font-bold text-teal-600 block">{formatPrice(room.GiaTheoNgay)}</span><span className="text-xs text-gray-400 font-medium">/đêm</span></div>
+                                                <div>
+                                                    <span className="text-2xl font-bold text-teal-600 block">{formatPrice(room.GiaTheoNgay)}</span>
+                                                    <span className="text-xs text-gray-400 font-medium">/đêm</span>
+                                                </div>
                                                 <div className="flex gap-3">
                                                     <Link to={`/rooms/${room.MaPhong}`} className="px-5 py-2.5 border-2 border-teal-600 text-teal-600 font-bold rounded-lg hover:bg-teal-50 transition text-sm">Chi tiết</Link>
-                                                    <button disabled={room.TrangThai !== 'Trong'} className={`px-5 py-2.5 font-bold rounded-lg transition text-sm shadow-md ${room.TrangThai === 'Trong' ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-teal-200' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>{room.TrangThai === 'Trong' ? 'Đặt ngay' : 'Hết phòng'}</button>
+                                                    <button
+                                                        onClick={() => handleBookNowClick(room)}
+                                                        className="px-5 py-2.5 font-bold rounded-lg transition text-sm shadow-md bg-teal-600 text-white hover:bg-teal-700 shadow-teal-200"
+                                                    >
+                                                        Đặt ngay
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -205,7 +262,7 @@ const RoomList = () => {
                             )}
                         </div>
 
-                        {/* --- THANH PHÂN TRANG (PAGINATION) --- */}
+                        {/* --- THANH PHÂN TRANG --- */}
                         {pagination.totalPages > 1 && (
                             <div className="flex justify-center items-center gap-2">
                                 <button
@@ -223,8 +280,8 @@ const RoomList = () => {
                                             key={pageNum}
                                             onClick={() => handlePageChange(pageNum)}
                                             className={`w-10 h-10 rounded-lg font-bold transition ${pagination.page === pageNum
-                                                    ? "bg-teal-600 text-white shadow-md shadow-teal-200"
-                                                    : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
+                                                ? "bg-teal-600 text-white shadow-md shadow-teal-200"
+                                                : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
                                                 }`}
                                         >
                                             {pageNum}
@@ -244,6 +301,117 @@ const RoomList = () => {
                     </div>
                 </div>
             </div>
+
+            {/* --- MODAL CHỌN NGÀY ĐẶT PHÒNG --- */}
+            {showBookingModal && selectedRoom && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowBookingModal(false)}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="p-6 border-b border-gray-100">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-800">{selectedRoom.TenPhong}</h2>
+                                    <div className="flex items-baseline gap-2 mt-1">
+                                        <span className="text-sm text-gray-400 line-through">{formatPrice(selectedRoom.GiaTheoNgay * 1.2)}</span>
+                                        <span className="text-2xl font-bold text-teal-600">{formatPrice(selectedRoom.GiaTheoNgay)}</span>
+                                        <span className="text-sm text-gray-500">/đêm</span>
+                                    </div>
+                                    <span className="inline-flex items-center gap-1 mt-2 bg-green-50 text-green-600 text-xs font-bold px-2 py-1 rounded-full">
+                                        <span className="w-2 h-2 bg-green-500 rounded-full"></span> Còn trống
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setShowBookingModal(false)}
+                                    className="text-gray-400 hover:text-gray-600 transition"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 space-y-4">
+                            {/* Ngày nhận phòng */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+                                    Nhận phòng
+                                </label>
+                                <input
+                                    type="date"
+                                    value={checkIn}
+                                    onChange={(e) => setCheckIn(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition text-gray-700 font-medium"
+                                />
+                            </div>
+
+                            {/* Ngày trả phòng */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+                                    Trả phòng
+                                </label>
+                                <input
+                                    type="date"
+                                    value={checkOut}
+                                    onChange={(e) => setCheckOut(e.target.value)}
+                                    min={checkIn || new Date().toISOString().split('T')[0]}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition text-gray-700 font-medium"
+                                />
+                            </div>
+
+                            {/* Sức chứa */}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+                                    Sức chứa tối đa
+                                </label>
+                                <div className="flex items-center gap-2 text-teal-600">
+                                    <Users size={20} />
+                                    <span className="text-lg font-bold">{selectedRoom.SucChua} Người lớn</span>
+                                </div>
+                            </div>
+
+                            {/* Thông báo */}
+                            {!checkIn || !checkOut ? (
+                                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start gap-3">
+                                    <Calendar className="text-blue-500 mt-0.5" size={20} />
+                                    <p className="text-sm text-blue-700">
+                                        Vui lòng chọn ngày nhận & trả phòng để xem giá.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="bg-teal-50 border border-teal-100 rounded-lg p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm text-gray-600">Số đêm:</span>
+                                        <span className="text-sm font-bold text-gray-800">
+                                            {Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24))} đêm
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">Tổng tiền:</span>
+                                        <span className="text-lg font-bold text-teal-600">
+                                            {formatPrice(selectedRoom.GiaTheoNgay * Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24)))}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 border-t border-gray-100">
+                            <button
+                                onClick={handleConfirmBooking}
+                                disabled={!checkIn || !checkOut}
+                                className="w-full py-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition shadow-lg disabled:shadow-none"
+                            >
+                                Đặt Phòng Ngay
+                            </button>
+                            <p className="text-xs text-center text-gray-400 mt-3">
+                                * Các chi phí phát sinh sẽ được thanh toán tại quầy khi trả phòng.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

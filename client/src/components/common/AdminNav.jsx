@@ -1,13 +1,13 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutGrid, List, UserCheck, CalendarDays, BarChart3 } from 'lucide-react';
+import { LayoutGrid, List, UserCheck, CalendarDays, FileText } from 'lucide-react';
 
 const AdminNav = () => {
     const navItems = [
-        { path: '/admin/stats', label: 'Dashboard', icon: BarChart3 },
         { path: '/admin', label: 'Quản lý phòng', icon: LayoutGrid, end: true },
         { path: '/admin/room-types', label: 'Loại phòng', icon: List },
         { path: '/admin/customers', label: 'Khách hàng', icon: UserCheck },
-        { path: '/admin/bookings', label: 'Đặt phòng', icon: CalendarDays }
+        { path: '/admin/bookings', label: 'Đặt phòng', icon: CalendarDays },
+        { path: '/admin/invoices', label: 'Hóa đơn', icon: FileText },
     ];
 
     return (
@@ -21,8 +21,8 @@ const AdminNav = () => {
                             end={item.end}
                             className={({ isActive }) =>
                                 `flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${isActive
-                                    ? "bg-teal-600 text-white shadow-md shadow-teal-200 transform scale-105" // Active: Nền xanh đậm, chữ trắng, bóng đổ
-                                    : "text-gray-500 hover:bg-gray-100 hover:text-teal-700" // Inactive: Nền xám khi hover
+                                    ? "bg-teal-600 text-white shadow-md shadow-teal-200 transform scale-105"
+                                    : "text-gray-500 hover:bg-gray-100 hover:text-teal-700"
                                 }`
                             }
                         >

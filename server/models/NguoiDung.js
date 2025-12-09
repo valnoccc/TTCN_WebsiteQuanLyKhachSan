@@ -45,8 +45,8 @@ const NguoiDung = {
             data.HoTen,
             data.Email,
             data.SDT,
-            data.DiaChi, // Thêm Địa chỉ
-            data.VaiTro, // Thêm Vai trò
+            data.DiaChi,
+            data.VaiTro,
             id
         ]);
         return result;

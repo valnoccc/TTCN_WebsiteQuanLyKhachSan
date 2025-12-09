@@ -14,7 +14,7 @@ const BaoCao = {
         return rows[0];
     },
 
-    // Lưu báo cáo vào bảng (Snapshot)
+    // Lưu báo cáo vào bảng
     saveReport: async (data) => {
         const sql = `
             INSERT INTO BaoCao (Thang, Nam, TongDoanhThu, TongSoDonDat, TongLuotKhach)

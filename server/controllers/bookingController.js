@@ -61,7 +61,6 @@ exports.updateStatus = async (req, res) => {
 
             // Thực hiện update nếu có trạng thái mới
             if (newRoomStatus) {
-                // Tạo chuỗi placeholder (?,?,?) cho câu lệnh IN
                 const placeholders = roomIds.map(() => '?').join(',');
 
                 await connection.execute(
@@ -227,7 +226,7 @@ exports.deleteBooking = async (req, res) => {
         // 1. Xóa dữ liệu trong bảng con 'chitietdondat' trước
         await connection.execute("DELETE FROM chitietdondat WHERE MaDonDat = ?", [id]);
 
-        // 2. Xóa dữ liệu trong bảng 'hoadon' (nếu có liên kết)
+        // 2. Xóa dữ liệu trong bảng 'hoadon'
         await connection.execute("DELETE FROM hoadon WHERE MaDonDat = ?", [id]);
 
         // 3. Cuối cùng mới xóa bảng cha 'dondatphong'
@@ -254,7 +253,6 @@ exports.getBookingById = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // ... (phần lấy thông tin chung bookingInfo giữ nguyên) ...
         const [rows] = await db.execute(`
             SELECT d.*, t.HoTen, t.Email, t.SDT 
             FROM dondatphong d
@@ -275,9 +273,7 @@ exports.getBookingById = async (req, res) => {
         );
         // Thêm cờ HasInvoice vào object trả về
         bookingInfo.HasInvoice = invoices.length > 0;
-        // ----------------------------------------
 
-        // ... (phần lấy danh sách phòng giữ nguyên) ...
         const [rooms] = await db.execute(`
             SELECT 
                 ct.*, 
@@ -330,7 +326,7 @@ exports.checkout = async (req, res) => {
         `, [PhuThu || 0, GhiChuPhuThu || '', MaDonDat]);
 
         // 3. TẠO HÓA ĐƠN (Sửa tên cột cho khớp với ảnh DB)
-        // Cột trong DB: TongTienThanhToan, HinhThucThanhToan (Không thấy cột TrangThaiTT trong ảnh, nên mình bỏ qua)
+        // Cột trong DB: TongTienThanhToan, HinhThucThanhToan
         await connection.execute(`
             INSERT INTO hoadon (
                 MaDonDat, NgayLap, TongTienThanhToan, HinhThucThanhToan,
@@ -361,5 +357,48 @@ exports.checkout = async (req, res) => {
         res.status(500).json({ message: "Lỗi server khi lưu hóa đơn" });
     } finally {
         connection.release();
+    }
+};
+
+exports.getAllInvoices = async (req, res) => {
+    try {
+        const [invoices] = await db.execute(`
+            SELECT * FROM hoadon ORDER BY NgayLap DESC
+        `);
+
+        res.status(200).json(invoices);
+    } catch (error) {
+        console.error("Lỗi lấy danh sách hóa đơn:", error);
+        res.status(500).json({ message: "Lỗi server" });
+    }
+};
+
+exports.getInvoiceById = async (req, res) => {
+    const { id } = req.params; // Đây là MaHD
+
+    try {
+        const [rows] = await db.execute("SELECT * FROM hoadon WHERE MaHD = ?", [id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "Hóa đơn không tồn tại" });
+        }
+
+        const invoice = rows[0];
+
+        // Parse chuỗi JSON chi tiết phòng thành Object để Frontend dùng
+        try {
+            if (invoice.ChiTietPhong && typeof invoice.ChiTietPhong === 'string') {
+                invoice.ChiTietPhong = JSON.parse(invoice.ChiTietPhong);
+            }
+        } catch (e) {
+            console.error("Lỗi parse JSON chi tiết phòng:", e);
+            invoice.ChiTietPhong = [];
+        }
+
+        res.status(200).json(invoice);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Lỗi server khi lấy hóa đơn" });
     }
 };

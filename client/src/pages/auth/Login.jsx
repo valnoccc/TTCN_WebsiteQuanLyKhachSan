@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import authApi from '../../api/authApi'; // <--- Import file API vừa tạo
+import authApi from '../../api/authApi';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -41,7 +41,6 @@ const Login = () => {
         }
     };
 
-    // ... (Phần return giao diện HTML giữ nguyên như cũ)
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600">
             <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">

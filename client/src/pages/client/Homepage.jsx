@@ -263,7 +263,6 @@ const HomePage = () => {
                 </div>
             </section>
 
-            {/* --- 6. LOCATION --- */}
             {/* --- 6. VỊ TRÍ & LIÊN HỆ --- */}
             <section className="py-20 bg-slate-900 text-white relative overflow-hidden">
                 {/* Pattern nền mờ nhẹ */}
@@ -316,7 +315,7 @@ const HomePage = () => {
                             </div>
                         </div>
 
-                        {/* Cột Bản đồ (Phải) - Đã sửa lỗi hiển thị */}
+                        {/* Cột Bản đồ (Phải)*/}
                         <div className="w-full lg:w-1/2 min-h-[400px]">
                             <div className="relative w-full h-full min-h-[400px] rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-700 group">
                                 {/* Google Maps Iframe chính xác cho 180 Cao Lỗ */}

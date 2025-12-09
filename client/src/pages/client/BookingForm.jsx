@@ -77,7 +77,7 @@ const BookingForm = () => {
             const currentUser = storedUser ? JSON.parse(storedUser) : null;
 
             // --- DEBUG: In ra để xem user đang lưu cái gì ---
-            console.log("🔍 Thông tin user trong LocalStorage:", currentUser);
+            //console.log("Thông tin user trong LocalStorage:", currentUser);
 
             // 1. Tự động tìm ID người dùng (thử các trường hợp phổ biến)
             const userId = currentUser?.id
@@ -85,7 +85,7 @@ const BookingForm = () => {
             // 2. Kiểm tra nếu không tìm thấy ID
             if (!userId) {
                 alert("Không tìm thấy ID người dùng. Vui lòng Đăng xuất và Đăng nhập lại!");
-                // navigate('/login'); // Bỏ comment dòng này nếu muốn tự động chuyển trang
+                navigate('/login'); // Bỏ comment dòng này nếu muốn tự động chuyển trang
                 setLoading(false);
                 return;
             }
@@ -109,8 +109,6 @@ const BookingForm = () => {
                 PhuongThucThanhToan: paymentMethod,
                 TrangThaiDon: 'ChoDuyet'
             };
-
-            // console.log('📦 Dữ liệu gửi đi:', bookingPayload);
 
             const response = await axios.post('http://localhost:5000/api/bookings/create', bookingPayload);
 

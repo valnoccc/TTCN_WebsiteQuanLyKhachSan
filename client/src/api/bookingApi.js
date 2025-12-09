@@ -28,6 +28,10 @@ const bookingApi = {
 
     checkout(data) {
         return axiosClient.post('/bookings/checkout', data);
+    },
+
+    getInvoiceById(id) {
+        return axiosClient.get(`/bookings/invoices/detail/${id}`);
     }
 };
 
