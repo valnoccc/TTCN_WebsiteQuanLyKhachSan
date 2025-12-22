@@ -35,6 +35,25 @@ Dự án **Website Quản Lý Khách Sạn** là sản phẩm thuộc môn **Th�
 * **Quản lý Đơn đặt:** Xác nhận đơn mới, check-in/check-out, xuất hóa đơn.
 * **Quản lý Khách hàng:** Tra cứu thông tin và lịch sử lưu trú của khách.
 
+---
+
+## Hạn chế & Chức năng chưa hoàn thiện (Limitations)
+
+Do giới hạn về thời gian thực hiện đồ án, hệ thống hiện tại vẫn còn một số chức năng chưa được hoàn thiện đầy đủ:
+
+1.  **Quản lý đơn đặt cá nhân (Client):**
+    * Người dùng chưa xem lại được lịch sử các đơn đặt phòng cũ chi tiết.
+    * Chưa có chức năng tự hủy phòng hoặc gửi yêu cầu thay đổi lịch đặt trực tiếp trên web.
+2.  **Thống kê nâng cao (Admin):**
+    * Dashboard quản trị mới chỉ hiển thị số liệu cơ bản, chưa có biểu đồ trực quan (Chart) về doanh thu theo tháng/quý.
+    * Chưa hỗ trợ xuất báo cáo thống kê ra file Excel hoặc PDF.
+3.  **Thanh toán Online:**
+    * Hệ thống hiện tại chỉ ghi nhận đơn đặt, chưa tích hợp cổng thanh toán thực tế (như VNPAY, MoMo).
+
+*Các chức năng này nằm trong lộ trình phát triển (Roadmap) của phiên bản tiếp theo.*
+
+---
+
 ## Công nghệ sử dụng (Tech Stack)
 
 | Lĩnh vực | Công nghệ & Phiên bản |
