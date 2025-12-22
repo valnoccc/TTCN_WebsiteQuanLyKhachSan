@@ -39,7 +39,7 @@ Dự án **Website Quản Lý Khách Sạn** là sản phẩm thuộc môn **Th�
 
 | Lĩnh vực | Công nghệ & Phiên bản |
 | :--- | :--- |
-| **Frontend** | - **ReactJS**: v19.2.0<br>- **Vite**: v7.2.4<br>- **Tailwind CSS**: v3.4.18<br>- **Axios**: v1.13.2<br>- **React Router DOM**: v7.9.6<br>- **Chart.js**: v4.5.1 |
+| **Frontend** | - **ReactJS**: v19.2.0<br>- **Vite**: v7.2.4<br>- **Tailwind CSS**: v3.4.18<br>- **Axios**: v1.13.2<br>- **React Router DOM**: v7.9.6<br>|
 | **Backend** | - **Node.js**: v24.11.0<br>- **Express Framework**: v5.1.0<br>- **JsonWebToken (JWT)**: v9.0.2<br>- **Bcrypt**: v6.0.0 |
 | **Database** | - **MySQL Server**: v9.1.0<br>- **Driver (mysql2)**: v3.15.3 |
 | **Tools** | VS Code, Git/GitHub |
