@@ -20,6 +20,16 @@ const HomePage = () => {
     // State chứa tất cả phòng
     const [rooms, setRooms] = useState([]);
 
+    // --- STATE CHO TÌM KIẾM ---
+    const [searchParams, setSearchParams] = useState({
+        checkInDate: '',
+        checkOutDate: '',
+        guestCount: 2
+    });
+    const [filteredRooms, setFilteredRooms] = useState(null);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState('');
+
     // Lấy TẤT CẢ phòng từ Database
     useEffect(() => {
         const fetchRooms = async () => {
@@ -51,10 +61,33 @@ const HomePage = () => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
     };
 
-    // Xử lý tìm kiếm
+    // Xử lý tìm kiếm - chuyển sang trang /rooms với params
     const handleSearch = () => {
-        // Logic tìm kiếm đơn giản: chuyển sang trang danh sách
-        navigate('/rooms');
+        setSearchError('');
+
+        // Validate
+        if (!searchParams.checkInDate || !searchParams.checkOutDate) {
+            setSearchError('Vui lòng chọn ngày nhận và trả phòng');
+            return;
+        }
+
+        const checkIn = new Date(searchParams.checkInDate);
+        const checkOut = new Date(searchParams.checkOutDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (checkIn < today) {
+            setSearchError('Ngày nhận phòng không thể trong quá khứ');
+            return;
+        }
+
+        if (checkIn >= checkOut) {
+            setSearchError('Ngày trả phòng phải sau ngày nhận phòng');
+            return;
+        }
+
+        // Chuyển sang trang /rooms với query params
+        navigate(`/rooms?checkIn=${searchParams.checkInDate}&checkOut=${searchParams.checkOutDate}&guestCount=${searchParams.guestCount}`);
     };
 
     // Dữ liệu Dịch vụ
@@ -95,24 +128,41 @@ const HomePage = () => {
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Ngày nhận phòng</label>
                         <div className="flex items-center bg-gray-50 p-3 rounded-xl border border-gray-200 hover:border-teal-500 transition group">
                             <Calendar size={20} className="text-gray-400 group-hover:text-teal-600 mr-2 transition" />
-                            <input type="date" className="bg-transparent w-full text-sm font-semibold text-gray-700 outline-none cursor-pointer" />
+                            <input
+                                type="date"
+                                value={searchParams.checkInDate}
+                                onChange={(e) => setSearchParams({ ...searchParams, checkInDate: e.target.value })}
+                                className="bg-transparent w-full text-sm font-semibold text-gray-700 outline-none cursor-pointer"
+                            />
                         </div>
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Ngày trả phòng</label>
                         <div className="flex items-center bg-gray-50 p-3 rounded-xl border border-gray-200 hover:border-teal-500 transition group">
                             <Calendar size={20} className="text-gray-400 group-hover:text-teal-600 mr-2 transition" />
-                            <input type="date" className="bg-transparent w-full text-sm font-semibold text-gray-700 outline-none cursor-pointer" />
+                            <input
+                                type="date"
+                                value={searchParams.checkOutDate}
+                                onChange={(e) => setSearchParams({ ...searchParams, checkOutDate: e.target.value })}
+                                className="bg-transparent w-full text-sm font-semibold text-gray-700 outline-none cursor-pointer"
+                            />
                         </div>
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Số khách</label>
                         <div className="flex items-center bg-gray-50 p-3 rounded-xl border border-gray-200 hover:border-teal-500 transition group">
                             <Users size={20} className="text-gray-400 group-hover:text-teal-600 mr-2 transition" />
-                            <select className="bg-transparent w-full text-sm font-semibold text-gray-700 outline-none cursor-pointer">
-                                <option>2 Người lớn</option>
-                                <option>2 Lớn, 1 Trẻ em</option>
-                                <option>4 Người lớn</option>
+                            <select
+                                value={searchParams.guestCount}
+                                onChange={(e) => setSearchParams({ ...searchParams, guestCount: parseInt(e.target.value) })}
+                                className="bg-transparent w-full text-sm font-semibold text-gray-700 outline-none cursor-pointer"
+                            >
+                                <option value="1">1 Người</option>
+                                <option value="2">2 Người lớn</option>
+                                <option value="3">3 Người</option>
+                                <option value="4">4 Người lớn</option>
+                                <option value="5">5 Người</option>
+                                <option value="6">6 Người</option>
                             </select>
                         </div>
                     </div>
@@ -126,6 +176,12 @@ const HomePage = () => {
                         </button>
                     </div>
                 </div>
+                {/* Hiển thị lỗi nếu có */}
+                {searchError && (
+                    <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                        {searchError}
+                    </div>
+                )}
             </div>
 
             {/* --- 3. ABOUT US --- */}

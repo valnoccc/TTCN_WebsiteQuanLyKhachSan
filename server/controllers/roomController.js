@@ -77,3 +77,43 @@ exports.deleteRoom = async (req, res) => {
         res.status(500).json({ message: "Lỗi server", error });
     }
 };
+
+exports.getAvailableRooms = async (req, res) => {
+    try {
+        const { checkIn, checkOut, guestCount } = req.query;
+
+        // Validate parameters
+        if (!checkIn || !checkOut || !guestCount) {
+            return res.status(400).json({
+                message: "Thiếu thông tin: checkIn, checkOut, guestCount là bắt buộc"
+            });
+        }
+
+        const guests = parseInt(guestCount);
+        if (isNaN(guests) || guests < 1) {
+            return res.status(400).json({
+                message: "Số lượng khách không hợp lệ"
+            });
+        }
+
+        // Validate dates
+        const checkInDate = new Date(checkIn);
+        const checkOutDate = new Date(checkOut);
+
+        if (checkInDate >= checkOutDate) {
+            return res.status(400).json({
+                message: "Ngày trả phòng phải sau ngày nhận phòng"
+            });
+        }
+
+        const rooms = await Phong.getAvailableRooms(checkIn, checkOut, guests);
+
+        res.status(200).json({
+            data: rooms,
+            total: rooms.length
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Lỗi server", error: error.message });
+    }
+};

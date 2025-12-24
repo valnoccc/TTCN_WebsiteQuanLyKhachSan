@@ -22,6 +22,12 @@ const roomApi = {
     },
     delete(id) {
         return axiosClient.delete(`/rooms/${id}`);
+    },
+    // Tìm kiếm phòng trống
+    getAvailable(checkIn, checkOut, guestCount) {
+        return axiosClient.get('/rooms/available', {
+            params: { checkIn, checkOut, guestCount }
+        });
     }
 };
 

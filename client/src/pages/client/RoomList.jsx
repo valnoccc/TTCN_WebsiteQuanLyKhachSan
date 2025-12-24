@@ -1,13 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Filter, Users, Maximize, Bed, BedDouble, X, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import roomApi from '../../api/roomApi';
 
 const RoomList = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [priceRange, setPriceRange] = useState(5000000);
+    const [priceFilter, setPriceFilter] = useState({
+        min: '',
+        max: ''
+    });
+    const [selectedRoomTypes, setSelectedRoomTypes] = useState([]);
+    const [availableRoomTypes, setAvailableRoomTypes] = useState([]);
+    const [filteredPage, setFilteredPage] = useState(1); // Trang hiện tại cho kết quả filter
+    const ITEMS_PER_PAGE = 6;
+
+    // State cho tìm kiếm
+    const [isSearchMode, setIsSearchMode] = useState(false);
+    const [searchInfo, setSearchInfo] = useState(null);
 
     // State cho modal đặt phòng
     const [showBookingModal, setShowBookingModal] = useState(false);
@@ -22,29 +35,58 @@ const RoomList = () => {
         totalPages: 1
     });
 
-    // Hàm gọi API
+    // Hàm gọi API - thông thường hoặc tìm kiếm
     const fetchRooms = async (page) => {
         setLoading(true);
         try {
-            const response = await roomApi.getAll({
-                page: page,
-                limit: 6
-            });
+            // Kiểm tra xem có query params không
+            const checkInParam = searchParams.get('checkIn');
+            const checkOutParam = searchParams.get('checkOut');
+            const guestCountParam = searchParams.get('guestCount');
 
-            if (response.data) {
-                setRooms(response.data);
-                setPagination({
-                    page: response.pagination.page,
-                    limit: response.pagination.limit,
-                    totalPages: response.pagination.totalPages
+            if (checkInParam && checkOutParam && guestCountParam) {
+                // Chế độ tìm kiếm
+                const response = await roomApi.getAvailable(checkInParam, checkOutParam, guestCountParam);
+                setRooms(response.data || []);
+                setIsSearchMode(true);
+                setSearchInfo({
+                    checkIn: checkInParam,
+                    checkOut: checkOutParam,
+                    guestCount: guestCountParam
                 });
+                setPagination({ page: 1, limit: response.data?.length || 0, totalPages: 1 });
             } else {
-                setRooms([]);
+                // Kiểm tra xem có filter không (giá hoặc loại phòng)
+                const hasFilters = priceFilter.min || priceFilter.max || selectedRoomTypes.length > 0;
+
+                // Nếu có filter, load tất cả phòng, không thì phân trang bình thường
+                const limit = hasFilters ? 1000 : 6;
+                const response = await roomApi.getAll({ page: hasFilters ? 1 : page, limit: limit });
+
+                if (response.data) {
+                    setRooms(response.data);
+                    if (hasFilters) {
+                        // Khi filter, không có pagination
+                        setPagination({ page: 1, limit: response.data.length, totalPages: 1 });
+                    } else {
+                        // Pagination bình thường
+                        setPagination({
+                            page: response.pagination.page,
+                            limit: response.pagination.limit,
+                            totalPages: response.pagination.totalPages
+                        });
+                    }
+                } else {
+                    setRooms([]);
+                }
+                setIsSearchMode(false);
+                setSearchInfo(null);
             }
 
             window.scrollTo(0, 0);
         } catch (error) {
             console.error("Lỗi tải phòng:", error);
+            setRooms([]);
         } finally {
             setLoading(false);
         }
@@ -52,13 +94,61 @@ const RoomList = () => {
 
     useEffect(() => {
         fetchRooms(1);
+    }, [searchParams, priceFilter.min, priceFilter.max, selectedRoomTypes]); // Re-fetch khi URL params hoặc filters thay đổi
+
+    // Fetch all room types from API
+    useEffect(() => {
+        const fetchRoomTypes = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/room-types');
+                const data = await response.json();
+                const types = data.map(rt => rt.TenLoai).filter(Boolean);
+                setAvailableRoomTypes(types);
+            } catch (error) {
+                console.error('Error fetching room types:', error);
+            }
+        };
+        fetchRoomTypes();
     }, []);
 
     const handlePageChange = (newPage) => {
-        if (newPage >= 1 && newPage <= pagination.totalPages) {
+        if (newPage >= 1 && newPage <= pagination.totalPages && !isSearchMode) {
             fetchRooms(newPage);
         }
     };
+
+    // Xóa bộ lọc tìm kiếm
+    const handleClearSearch = () => {
+        navigate('/rooms');
+    };
+
+    // State cho bộ lọc sidebar
+    const [filterInputs, setFilterInputs] = useState({
+        checkIn: searchParams.get('checkIn') || '',
+        checkOut: searchParams.get('checkOut') || '',
+        guestCount: searchParams.get('guestCount') || '2'
+    });
+
+    // Áp dụng bộ lọc
+    const handleApplyFilter = () => {
+        if (filterInputs.checkIn && filterInputs.checkOut) {
+            navigate(`/rooms?checkIn=${filterInputs.checkIn}&checkOut=${filterInputs.checkOut}&guestCount=${filterInputs.guestCount}`);
+        }
+    };
+
+    // Toggle room type selection
+    const handleRoomTypeToggle = (type) => {
+        setSelectedRoomTypes(prev =>
+            prev.includes(type)
+                ? prev.filter(t => t !== type)
+                : [...prev, type]
+        );
+    };
+
+    // Reset filtered page when filters change
+    useEffect(() => {
+        setFilteredPage(1);
+    }, [priceFilter.min, priceFilter.max, selectedRoomTypes]);
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -123,8 +213,91 @@ const RoomList = () => {
 
                 {/* Header */}
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-800">Danh Sách Phòng</h1>
-                    <p className="text-sm text-gray-500 mt-1">Trang {pagination.page} / {pagination.totalPages}</p>
+                    <h1 className="text-2xl font-bold text-gray-800">
+                        {isSearchMode ? 'Kết quả tìm kiếm' : 'Danh Sách Phòng'}
+                    </h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {isSearchMode
+                            ? `Tìm thấy ${rooms.length} phòng phù hợp`
+                            : `Trang ${pagination.page} / ${pagination.totalPages}`
+                        }
+                    </p>
+                </div>
+
+                {/* Banner tìm kiếm */}
+                {isSearchMode && searchInfo && (
+                    <div className="mb-6 bg-teal-50 border border-teal-200 rounded-xl p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-sm">
+                            <Calendar className="text-teal-600" size={20} />
+                            <div className="flex gap-4">
+                                <span className="text-gray-700">
+                                    <strong>Nhận:</strong> {new Date(searchInfo.checkIn).toLocaleDateString('vi-VN')}
+                                </span>
+                                <span className="text-gray-700">
+                                    <strong>Trả:</strong> {new Date(searchInfo.checkOut).toLocaleDateString('vi-VN')}
+                                </span>
+                                <span className="text-gray-700">
+                                    <strong>Khách:</strong> {searchInfo.guestCount} người
+                                </span>
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleClearSearch}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-teal-600 text-teal-600 rounded-lg hover:bg-teal-50 transition font-semibold"
+                        >
+                            <X size={16} />
+                            Xóa bộ lọc
+                        </button>
+                    </div>
+                )}
+
+                {/* Thanh tìm kiếm ngang */}
+                <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Ngày nhận phòng</label>
+                            <input
+                                type="date"
+                                value={filterInputs.checkIn}
+                                onChange={(e) => setFilterInputs({ ...filterInputs, checkIn: e.target.value })}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Ngày trả phòng</label>
+                            <input
+                                type="date"
+                                value={filterInputs.checkOut}
+                                onChange={(e) => setFilterInputs({ ...filterInputs, checkOut: e.target.value })}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Số khách</label>
+                            <select
+                                value={filterInputs.guestCount}
+                                onChange={(e) => setFilterInputs({ ...filterInputs, guestCount: e.target.value })}
+                                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm"
+                            >
+                                <option value="1">1 Người</option>
+                                <option value="2">2 Người</option>
+                                <option value="3">3 Người</option>
+                                <option value="4">4 Người</option>
+                                <option value="5">5 Người</option>
+                                <option value="6">6+ Người</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button
+                                onClick={handleApplyFilter}
+                                disabled={!filterInputs.checkIn || !filterInputs.checkOut}
+                                className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-lg transition flex items-center justify-center gap-2"
+                            >
+                                <Search size={18} />
+                                Tìm kiếm
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8">
@@ -136,77 +309,60 @@ const RoomList = () => {
                                 <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
                                     <Filter size={18} /> Bộ Lọc
                                 </h3>
-                                <button className="text-teal-600 text-sm flex items-center gap-1 hover:underline">
+                                <button
+                                    onClick={handleClearSearch}
+                                    className="text-teal-600 text-sm flex items-center gap-1 hover:underline"
+                                >
                                     <X size={14} /> Xóa
                                 </button>
                             </div>
 
                             {/* 1. Khoảng Giá */}
-                            <div className="mb-8">
+                            <div className="mb-6 pb-6 border-b border-gray-100">
                                 <h4 className="font-semibold mb-4 text-gray-700 text-sm uppercase tracking-wide">Khoảng Giá</h4>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="5000000"
-                                    step="100000"
-                                    value={priceRange}
-                                    onChange={(e) => setPriceRange(e.target.value)}
-                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                                />
-                                <div className="flex justify-between text-sm text-gray-600 mt-2 font-medium">
-                                    <span>0đ</span>
-                                    <span>{formatPrice(priceRange)}</span>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs text-gray-500 mb-1.5">Giá từ</label>
+                                        <input
+                                            type="number"
+                                            placeholder="0"
+                                            value={priceFilter.min}
+                                            onChange={(e) => setPriceFilter({ ...priceFilter, min: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-500 mb-1.5">Giá đến</label>
+                                        <input
+                                            type="number"
+                                            placeholder="5000000"
+                                            value={priceFilter.max}
+                                            onChange={(e) => setPriceFilter({ ...priceFilter, max: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none text-sm"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* 2. Sức chứa */}
-                            <div className="mb-8">
-                                <h4 className="font-semibold mb-4 text-gray-700 text-sm uppercase tracking-wide">Số lượng khách</h4>
-                                <div className="space-y-3">
-                                    {[
-                                        { label: '1 - 2 Người', val: '2' },
-                                        { label: '3 - 4 Người', val: '4' },
-                                        { label: '5+ Người', val: '6' }
-                                    ].map((item, index) => (
-                                        <label key={index} className="flex items-center gap-3 cursor-pointer group">
-                                            <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500 transition" />
-                                            <span className="text-gray-600 flex items-center gap-2 group-hover:text-teal-600 transition">
-                                                <Users size={16} className="text-gray-400 group-hover:text-teal-600" /> {item.label}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* 3. Loại Giường */}
-                            <div className="mb-8">
-                                <h4 className="font-semibold mb-4 text-gray-700 text-sm uppercase tracking-wide">Loại Giường</h4>
-                                <div className="space-y-3">
-                                    {[
-                                        { label: '1 Giường đôi lớn', icon: <BedDouble size={16} /> },
-                                        { label: '2 Giường đơn', icon: <Bed size={16} /> },
-                                        { label: '2 Giường đôi', icon: <BedDouble size={16} /> }
-                                    ].map((item, index) => (
-                                        <label key={index} className="flex items-center gap-3 cursor-pointer group">
-                                            <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500 transition" />
-                                            <span className="text-gray-600 flex items-center gap-2 group-hover:text-teal-600 transition">
-                                                <span className="text-gray-400 group-hover:text-teal-600">{item.icon}</span> {item.label}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* 4. Loại Phòng */}
+                            {/* 2. Hạng Phòng */}
                             <div className="mb-4">
                                 <h4 className="font-semibold mb-4 text-gray-700 text-sm uppercase tracking-wide">Hạng Phòng</h4>
                                 <div className="space-y-3">
-                                    {['Standard', 'Deluxe', 'Suite', 'Presidential'].map((type) => (
-                                        <label key={type} className="flex items-center gap-3 cursor-pointer group">
-                                            <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500 transition" />
-                                            <span className="text-gray-600 group-hover:text-teal-600 transition">{type}</span>
-                                        </label>
-                                    ))}
+                                    {availableRoomTypes.length > 0 ? (
+                                        availableRoomTypes.map((type) => (
+                                            <label key={type} className="flex items-center gap-3 cursor-pointer group">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedRoomTypes.includes(type)}
+                                                    onChange={() => handleRoomTypeToggle(type)}
+                                                    className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500 transition"
+                                                />
+                                                <span className="text-gray-600 group-hover:text-teal-600 transition">{type}</span>
+                                            </label>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-gray-400">Đang tải...</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -215,89 +371,178 @@ const RoomList = () => {
                     {/* --- DANH SÁCH PHÒNG --- */}
                     <div className="w-full lg:w-3/4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                            {rooms.length > 0 ? (
-                                rooms.map((room) => (
-                                    <div key={room.MaPhong} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition duration-300 group flex flex-col h-full">
-                                        {/* Hình ảnh */}
-                                        <div className="relative h-60 overflow-hidden">
-                                            <img
-                                                src={room.HinhAnh || "https://via.placeholder.com/400x300?text=No+Image"}
-                                                alt={room.TenPhong}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                                            />
+                            {(() => {
+                                // Lọc phòng theo giá và loại phòng
+                                let filteredRooms = rooms;
 
-                                        </div>
-                                        {/* Nội dung */}
-                                        <div className="p-6 flex flex-col flex-grow">
-                                            <div className="mb-4">
-                                                <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-1">{room.TenPhong}</h3>
-                                                <p className="text-gray-500 text-sm line-clamp-2">{room.MoTa || "Phòng nghỉ hiện đại..."}</p>
+                                // Lọc theo giá
+                                if (priceFilter.min || priceFilter.max) {
+                                    filteredRooms = filteredRooms.filter(room => {
+                                        const price = room.GiaTheoNgay;
+                                        const min = priceFilter.min ? parseInt(priceFilter.min) : 0;
+                                        const max = priceFilter.max ? parseInt(priceFilter.max) : Infinity;
+                                        return price >= min && price <= max;
+                                    });
+                                }
+
+                                // Lọc theo loại phòng
+                                if (selectedRoomTypes.length > 0) {
+                                    filteredRooms = filteredRooms.filter(room =>
+                                        selectedRoomTypes.includes(room.TenLoai)
+                                    );
+                                }
+
+                                // Client-side pagination cho kết quả filter
+                                const totalFilteredPages = Math.ceil(filteredRooms.length / ITEMS_PER_PAGE);
+                                const startIndex = (filteredPage - 1) * ITEMS_PER_PAGE;
+                                const endIndex = startIndex + ITEMS_PER_PAGE;
+                                const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
+
+                                return paginatedRooms.length > 0 ? (
+                                    paginatedRooms.map((room) => (
+                                        <div key={room.MaPhong} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition duration-300 group flex flex-col h-full">
+                                            {/* Hình ảnh */}
+                                            <div className="relative h-60 overflow-hidden">
+                                                <img
+                                                    src={room.HinhAnh || "https://via.placeholder.com/400x300?text=No+Image"}
+                                                    alt={room.TenPhong}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                                />
+
                                             </div>
-                                            <div className="flex flex-wrap gap-3 text-sm text-gray-500 mb-6">
-                                                <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100"><Users size={16} className="text-teal-600" /> {room.SucChua} người</span>
-                                                <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100"><Maximize size={16} className="text-teal-600" /> {room.DienTich}m²</span>
-                                            </div>
-                                            <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100">
-                                                <div>
-                                                    <span className="text-2xl font-bold text-teal-600 block">{formatPrice(room.GiaTheoNgay)}</span>
-                                                    <span className="text-xs text-gray-400 font-medium">/đêm</span>
+                                            {/* Nội dung */}
+                                            <div className="p-6 flex flex-col flex-grow">
+                                                <div className="mb-4">
+                                                    <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-1">{room.TenPhong}</h3>
+                                                    <p className="text-gray-500 text-sm line-clamp-2">{room.MoTa || "Phòng nghỉ hiện đại..."}</p>
                                                 </div>
-                                                <div className="flex gap-3">
-                                                    <Link to={`/rooms/${room.MaPhong}`} className="px-5 py-2.5 border-2 border-teal-600 text-teal-600 font-bold rounded-lg hover:bg-teal-50 transition text-sm">Chi tiết</Link>
-                                                    <button
-                                                        onClick={() => handleBookNowClick(room)}
-                                                        className="px-5 py-2.5 font-bold rounded-lg transition text-sm shadow-md bg-teal-600 text-white hover:bg-teal-700 shadow-teal-200"
-                                                    >
-                                                        Đặt ngay
-                                                    </button>
+                                                <div className="flex flex-wrap gap-3 text-sm text-gray-500 mb-6">
+                                                    <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100"><Users size={16} className="text-teal-600" /> {room.SucChua} người</span>
+                                                    <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100"><Maximize size={16} className="text-teal-600" /> {room.DienTich}m²</span>
+                                                </div>
+                                                <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100">
+                                                    <div>
+                                                        <span className="text-2xl font-bold text-teal-600 block">{formatPrice(room.GiaTheoNgay)}</span>
+                                                        <span className="text-xs text-gray-400 font-medium">/đêm</span>
+                                                    </div>
+                                                    <div className="flex gap-3">
+                                                        <Link to={`/rooms/${room.MaPhong}`} className="px-5 py-2.5 border-2 border-teal-600 text-teal-600 font-bold rounded-lg hover:bg-teal-50 transition text-sm">Chi tiết</Link>
+                                                        <button
+                                                            onClick={() => handleBookNowClick(room)}
+                                                            className="px-5 py-2.5 font-bold rounded-lg transition text-sm shadow-md bg-teal-600 text-white hover:bg-teal-700 shadow-teal-200"
+                                                        >
+                                                            Đặt ngay
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="col-span-2 text-center py-10 text-gray-500">
+                                        Không tìm thấy phòng nào phù hợp.
                                     </div>
-                                ))
-                            ) : (
-                                <div className="col-span-2 text-center py-10 text-gray-500">
-                                    Không tìm thấy phòng nào phù hợp.
-                                </div>
-                            )}
+                                )
+                            })()}
                         </div>
 
                         {/* --- THANH PHÂN TRANG --- */}
-                        {pagination.totalPages > 1 && (
-                            <div className="flex justify-center items-center gap-2">
-                                <button
-                                    onClick={() => handlePageChange(pagination.page - 1)}
-                                    disabled={pagination.page === 1}
-                                    className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                >
-                                    <ChevronLeft size={20} />
-                                </button>
+                        {(() => {
+                            const hasFilters = priceFilter.min || priceFilter.max || selectedRoomTypes.length > 0;
 
-                                {[...Array(pagination.totalPages)].map((_, index) => {
-                                    const pageNum = index + 1;
-                                    return (
+                            if (hasFilters) {
+                                // Pagination cho kết quả filter
+                                let filteredRooms = rooms;
+
+                                if (priceFilter.min || priceFilter.max) {
+                                    filteredRooms = filteredRooms.filter(room => {
+                                        const price = room.GiaTheoNgay;
+                                        const min = priceFilter.min ? parseInt(priceFilter.min) : 0;
+                                        const max = priceFilter.max ? parseInt(priceFilter.max) : Infinity;
+                                        return price >= min && price <= max;
+                                    });
+                                }
+
+                                if (selectedRoomTypes.length > 0) {
+                                    filteredRooms = filteredRooms.filter(room => selectedRoomTypes.includes(room.TenLoai));
+                                }
+
+                                const totalPages = Math.ceil(filteredRooms.length / ITEMS_PER_PAGE);
+
+                                return totalPages > 1 && (
+                                    <div className="flex justify-center items-center gap-2">
                                         <button
-                                            key={pageNum}
-                                            onClick={() => handlePageChange(pageNum)}
-                                            className={`w-10 h-10 rounded-lg font-bold transition ${pagination.page === pageNum
-                                                ? "bg-teal-600 text-white shadow-md shadow-teal-200"
-                                                : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
-                                                }`}
+                                            onClick={() => setFilteredPage(prev => Math.max(1, prev - 1))}
+                                            disabled={filteredPage === 1}
+                                            className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
                                         >
-                                            {pageNum}
+                                            <ChevronLeft size={20} />
                                         </button>
-                                    );
-                                })}
 
-                                <button
-                                    onClick={() => handlePageChange(pagination.page + 1)}
-                                    disabled={pagination.page === pagination.totalPages}
-                                    className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                >
-                                    <ChevronRight size={20} />
-                                </button>
-                            </div>
-                        )}
+                                        {[...Array(totalPages)].map((_, index) => {
+                                            const pageNum = index + 1;
+                                            return (
+                                                <button
+                                                    key={pageNum}
+                                                    onClick={() => setFilteredPage(pageNum)}
+                                                    className={`w-10 h-10 rounded-lg font-bold transition ${filteredPage === pageNum
+                                                        ? "bg-teal-600 text-white shadow-md shadow-teal-200"
+                                                        : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
+                                                        }`}
+                                                >
+                                                    {pageNum}
+                                                </button>
+                                            );
+                                        })}
+
+                                        <button
+                                            onClick={() => setFilteredPage(prev => Math.min(totalPages, prev + 1))}
+                                            disabled={filteredPage === totalPages}
+                                            className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                        >
+                                            <ChevronRight size={20} />
+                                        </button>
+                                    </div>
+                                );
+                            } else {
+                                // Pagination bình thường (không filter)
+                                return !isSearchMode && pagination.totalPages > 1 && (
+                                    <div className="flex justify-center items-center gap-2">
+                                        <button
+                                            onClick={() => handlePageChange(pagination.page - 1)}
+                                            disabled={pagination.page === 1}
+                                            className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+
+                                        {[...Array(pagination.totalPages)].map((_, index) => {
+                                            const pageNum = index + 1;
+                                            return (
+                                                <button
+                                                    key={pageNum}
+                                                    onClick={() => handlePageChange(pageNum)}
+                                                    className={`w-10 h-10 rounded-lg font-bold transition ${pagination.page === pageNum
+                                                        ? "bg-teal-600 text-white shadow-md shadow-teal-200"
+                                                        : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
+                                                        }`}
+                                                >
+                                                    {pageNum}
+                                                </button>
+                                            );
+                                        })}
+
+                                        <button
+                                            onClick={() => handlePageChange(pagination.page + 1)}
+                                            disabled={pagination.page === pagination.totalPages}
+                                            className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                        >
+                                            <ChevronRight size={20} />
+                                        </button>
+                                    </div>
+                                );
+                            }
+                        })()}
                     </div>
                 </div>
             </div>

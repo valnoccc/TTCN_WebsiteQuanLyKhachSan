@@ -105,6 +105,30 @@ const Phong = {
         const sql = "DELETE FROM Phong WHERE MaPhong=?";
         const [result] = await db.execute(sql, [id]);
         return result;
+    },
+
+    // Lấy danh sách phòng trống theo khoảng thời gian và số khách
+    getAvailableRooms: async (checkIn, checkOut, guestCount) => {
+        const sql = `
+            SELECT DISTINCT
+                p.MaPhong, p.TenPhong, p.TrangThai, p.SucChua, p.DienTich, p.MoTa,
+                l.TenLoai, l.GiaTheoNgay, l.GiaTheoGio,
+                (SELECT Url FROM HinhAnhPhong h WHERE h.MaPhong = p.MaPhong LIMIT 1) as HinhAnh
+            FROM Phong p
+            JOIN LoaiPhong l ON p.MaLoai = l.MaLoai
+            WHERE p.SucChua >= ?
+            AND p.MaPhong NOT IN (
+                SELECT DISTINCT ct.MaPhong
+                FROM ChiTietDonDat ct
+                JOIN DonDatPhong d ON ct.MaDonDat = d.MaDonDat
+                WHERE d.TrangThaiDon NOT IN ('Huy', 'DaCheckOut')
+                AND NOT (d.NgayTraDuKien <= ? OR d.NgayNhanDuKien >= ?)
+            )
+            ORDER BY l.GiaTheoNgay ASC
+        `;
+
+        const [rows] = await db.execute(sql, [guestCount, checkIn, checkOut]);
+        return rows;
     }
 };
 
