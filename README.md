@@ -69,7 +69,7 @@ Làm theo các bước sau để chạy dự án trên máy cục bộ (Localhos
 Bước 1: Clone dự án
 
 Mở Terminal và chạy lệnh:
-```bash
+
 git clone [https://github.com/valnoccc/TTCN_WebsiteQuanLyKhachSan.git](https://github.com/valnoccc/TTCN_WebsiteQuanLyKhachSan.git)
 cd TTCN_WebsiteQuanLyKhachSan
 
