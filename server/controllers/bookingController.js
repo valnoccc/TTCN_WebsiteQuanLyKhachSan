@@ -291,7 +291,6 @@ exports.getBookingById = async (req, res) => {
         res.status(200).json(bookingInfo);
 
     } catch (error) {
-        // ... (xử lý lỗi giữ nguyên) ...
         res.status(500).json({
             message: "Lỗi server khi lấy chi tiết",
             errorDetail: error.message
