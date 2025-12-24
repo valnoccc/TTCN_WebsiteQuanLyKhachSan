@@ -77,8 +77,10 @@ Bước 2: Cài đặt và chạy Backend (Server)
 
 cd server
 npm install
-# Lưu ý: Tạo file .env và cấu hình thông tin Database (DB_HOST, DB_USER, DB_PASS...)
-npm start
+
+Lưu ý: Tạo file .env và cấu hình thông tin Database (DB_HOST, DB_USER, DB_PASS...)
+
+npm run dev
 
 Bước 3: Cài đặt và chạy Frontend (Client)
 
